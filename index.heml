@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>室内環境アンケート</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+    background: #f5f4f0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 36px 28px 32px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 2px 24px rgba(0,0,0,0.07);
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f0f4ff; color: #3860c8;
+    font-size: 12px; border-radius: 20px;
+    padding: 4px 12px; margin-bottom: 20px;
+  }
+  h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+  .sub { font-size: 14px; color: #888; margin-bottom: 28px; line-height: 1.6; }
+  .options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .opt {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px;
+    border: 1.5px solid #e8e8e8;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    background: #fff;
+    user-select: none;
+  }
+  .opt:hover { border-color: #b0b8e0; background: #f7f8ff; transform: translateX(2px); }
+  .opt.selected { border-color: #3860c8; background: #f0f4ff; }
+  .opt.selected .opt-label { color: #1f3d9e; font-weight: 600; }
+  .opt-icon { font-size: 24px; width: 32px; text-align: center; flex-shrink: 0; }
+  .opt-label { font-size: 15px; color: #2a2a2a; }
+  .opt-sub { font-size: 12px; color: #aaa; margin-top: 2px; }
+  .btn {
+    width: 100%; padding: 15px;
+    background: #1f3d9e; color: #fff;
+    border: none; border-radius: 14px;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.03em;
+  }
+  .btn:disabled { opacity: 0.3; cursor: default; }
+  .btn:not(:disabled):hover { opacity: 0.88; }
+  .btn:not(:disabled):active { transform: scale(0.98); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="badge">🌡 快適環境アンケート</div>
+  <h1>今、どのくらい感じますか？</h1>
+  <p class="sub">現在の室内環境について教えてください。</p>
+
+  <div class="options" id="options">
+    <div class="opt" data-v="5" onclick="select(5)">
+      <div class="opt-icon">🥵</div>
+      <div><div class="opt-label">とても暑い</div><div class="opt-sub">汗ばむほど暑い</div></div>
+    </div>
+    <div class="opt" data-v="4" onclick="select(4)">
+      <div class="opt-icon">😓</div>
+      <div><div class="opt-label">やや暑い</div><div class="opt-sub">少し暑さを感じる</div></div>
+    </div>
+    <div class="opt" data-v="3" onclick="select(3)">
+      <div class="opt-icon">😊</div>
+      <div><div class="opt-label">ちょうどよい</div><div class="opt-sub">快適な温度</div></div>
+    </div>
+    <div class="opt" data-v="2" onclick="select(2)">
+      <div class="opt-icon">🥶</div>
+      <div><div class="opt-label">やや寒い</div><div class="opt-sub">少し肌寒い</div></div>
+    </div>
+    <div class="opt" data-v="1" onclick="select(1)">
+      <div class="opt-icon">🧊</div>
+      <div><div class="opt-label">とても寒い</div><div class="opt-sub">震えるほど寒い</div></div>
+    </div>
+  </div>
+
+  <button class="btn" id="btn" disabled onclick="submit()">回答して結果を見る →</button>
+</div>
+
+<script>
+  let chosen = null;
+
+  function select(v) {
+    chosen = v;
+    document.querySelectorAll('.opt').forEach(el => {
+      el.classList.toggle('selected', parseInt(el.dataset.v) === v);
+    });
+    document.getElementById('btn').disabled = false;
+  }
+
+  function submit() {
+    if (!chosen) return;
+    const votes = JSON.parse(localStorage.getItem('votes') || '{"5":8,"4":19,"3":58,"2":31,"1":12}');
+    votes[chosen] = (votes[chosen] || 0) + 1;
+    localStorage.setItem('votes', JSON.stringify(votes));
+    localStorage.setItem('myAnswer', chosen);
+    window.location.href = './result.html';
+  }
+</script>
+</body>
+</html>
