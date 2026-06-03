@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>室内環境フィードバック</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+    background: #f5f4f0;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px 24px;
+    max-width: 480px;
+    margin: 0 auto 16px;
+    box-shadow: 0 2px 24px rgba(0,0,0,0.07);
+  }
+  .back {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: #888; cursor: pointer;
+    border: 1px solid #e0e0e0; border-radius: 20px;
+    padding: 5px 12px; background: #fff;
+    margin-bottom: 18px; text-decoration: none;
+    transition: background 0.1s;
+  }
+  .back:hover { background: #f5f4f0; }
+  h1 { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+  .updated { font-size: 12px; color: #bbb; margin-bottom: 20px; }
+  .demo-tag {
+    background: #fff8e6; color: #b07000; font-size: 11px;
+    border-radius: 6px; padding: 2px 7px; margin-left: 6px;
+  }
+  .my-answer {
+    display: flex; align-items: center; gap: 14px;
+    background: #f0f4ff; border-radius: 14px;
+    padding: 14px 18px; margin-bottom: 16px;
+  }
+  .my-icon { font-size: 30px; }
+  .my-label { font-size: 12px; color: #6680cc; margin-bottom: 2px; }
+  .my-val { font-size: 16px; font-weight: 700; color: #1f3d9e; }
+  .section-label { font-size:13px; font-weight:600; color:#888; margin-bottom:10px; }
+  .dist-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .dist-icon { font-size:16px; width:22px; text-align:center; flex-shrink:0; }
+  .dist-lbl { font-size:12px; color:#888; width:80px; flex-shrink:0; }
+  .bar-bg { flex:1; background:#f0f0f0; border-radius:4px; height:10px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:4px; transition: width 0.6s ease; }
+  .dist-pct { font-size:13px; font-weight:600; width:34px; text-align:right; color:#333; flex-shrink:0; }
+  .loading-msg { font-size:13px; color:#aaa; margin-bottom:16px; }
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  .metric { background: #f5f4f0; border-radius: 12px; padding: 12px 8px; text-align: center; }
+  .metric .val { font-size: 22px; font-weight: 700; color: #1a1a1a; }
+  .metric .unit { font-size: 12px; color: #aaa; }
+  .metric .lbl { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+  .badge-ok   { display:inline-block; font-size:11px; padding:2px 8px; border-radius:6px; margin-top:4px; background:#e6f4e6; color:#2e7d32; }
+  .badge-warn { display:inline-block; font-size:11px; padding:2px 8px; border-radius:6px; margin-top:4px; background:#fff3e0; color:#e65100; }
+  .comfort-row { display:flex; gap:16px; flex-wrap:wrap; background:#f5f4f0; border-radius:12px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:#555; }
+  .energy-box {
+    background: #f0faf0; border-radius: 12px; padding: 14px 16px;
+    margin-bottom: 20px; font-size: 13px; color: #2e5e2e; line-height: 1.8;
+    border-left: 4px solid #4caf50;
+  }
+  .energy-box .energy-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; color: #1b5e20; }
+  .chart-wrap { position:relative; width:100%; height:200px; margin-bottom:8px; }
+  .legend { display:flex; gap:16px; font-size:12px; color:#888; margin-bottom:20px; }
+  .legend-dot { width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:4px; }
+  .qr-box { text-align:center; padding:20px 0 4px; }
+  .qr-box p { font-size:12px; color:#aaa; margin-top:10px; }
+  .error-msg { font-size:12px; color:#e65100; margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<div style="max-width:480px; margin:0 auto;">
+  <a class="back" href="./index.html">← 回答し直す</a>
+</div>
+
+<div class="card">
+  <h1>現在の室内環境</h1>
+  <p class="updated" id="updated-at">取得中…</p>
+
+  <!-- あなたの回答 -->
+  <div class="my-answer">
+    <div class="my-icon" id="my-icon">😊</div>
+    <div>
+      <div class="my-label">あなたの回答</div>
+      <div class="my-val" id="my-val">ちょうどよい</div>
+    </div>
+  </div>
+
+  <!-- みんなの感じ方（Googleフォーム集計） -->
+  <div class="section-label">みんなの感じ方（<span id="total-count">取得中</span>件中）</div>
+  <div id="dist-bars" style="margin-bottom:20px;">
+    <div class="loading-msg">回答データを読み込み中…</div>
+  </div>
+
+  <!-- 温湿度メトリクス -->
+  <div class="metrics">
+    <div class="metric">
+      <div class="lbl">室温</div>
+      <div class="val" id="m-temp">--<span class="unit">°C</span></div>
+      <span class="badge-ok" id="b-temp">取得中</span>
+    </div>
+    <div class="metric">
+      <div class="lbl">湿度</div>
+      <div class="val" id="m-hum">--<span class="unit">%</span></div>
+      <span class="badge-ok" id="b-hum">取得中</span>
+    </div>
+    <div class="metric">
+      <div class="lbl">設定温度</div>
+      <div class="val" id="m-set">--<span class="unit">°C</span></div>
+      <span class="badge-ok" id="b-set">取得中</span>
+    </div>
+  </div>
+
+  <!-- 快適域 -->
+  <div class="comfort-row">
+    <span>🌡 快適域：<strong>24〜27°C</strong></span>
+    <span>💧 快適域：<strong>45〜60%</strong></span>
+  </div>
+
+  <!-- 省エネ情報 -->
+  <div class="energy-box">
+    <div class="energy-title">💡 空調の省エネ豆知識</div>
+    冷房の設定温度を <strong>1°C 上げる</strong>と、空調の消費電力を約 <strong>10%</strong> 削減できます。<br>
+    一般家庭（6畳エアコン）で夏の1か月あたり約 <strong>372円</strong> の節約に相当します。<br>
+    <span style="font-size:11px; color:#4a7a4a;">※ 省エネルギーセンター基準。500W×8h×30日×31円/kWh×10%で算出。</span>
+  </div>
+
+  <!-- グラフ凡例 -->
+  <div class="legend">
+    <span><span class="legend-dot" style="background:#D85A30"></span>室温 (°C・左軸)</span>
+    <span><span class="legend-dot" style="background:#378ADD;"></span>湿度 (%・右軸)</span>
+  </div>
+
+  <!-- 推移グラフ -->
+  <div class="chart-wrap">
+    <canvas id="chart" role="img" aria-label="本日の室温と湿度の時間推移"></canvas>
+  </div>
+</div>
+
+<!-- QR -->
+<div class="card">
+  <div class="section-label" style="text-align:center">このアンケートをシェア</div>
+  <div class="qr-box">
+    <canvas id="qr" width="140" height="140"></canvas>
+    <p>QRコードを読み取るとアンケートページへ</p>
+  </div>
+</div>
+
+<script>
+// =============================================
+// 設定値
+// =============================================
+
+// GoogleフォームのApps Script公開URL
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwlZWWuSoKZl-oQz9W6riR55XSuQxGEdtheMq75UGKTこれができた/exec';
+
+// Googleフォームの選択肢ラベル → 数値への変換マップ
+const LABEL_TO_V = {
+  'とても暑い': 5,
+  'やや暑い':   4,
+  'ちょうどよい': 3,
+  'やや寒い':   2,
+  'とても寒い': 1,
+};
+
+const OPTS = [
+  { v:5, icon:'🥵', label:'とても暑い' },
+  { v:4, icon:'😓', label:'やや暑い'   },
+  { v:3, icon:'😊', label:'ちょうどよい'},
+  { v:2, icon:'🥶', label:'やや寒い'   },
+  { v:1, icon:'🧊', label:'とても寒い' },
+];
+const BAR_COLORS = { 5:'#D85A30', 4:'#EF9F27', 3:'#639922', 2:'#378ADD', 1:'#534AB7' };
+
+// =============================================
+// あなたの回答を表示（index.htmlからlocalStorageで受け取る）
+// =============================================
+const myV   = parseInt(localStorage.getItem('myAnswer') || '3');
+const myOpt = OPTS.find(o => o.v === myV);
+document.getElementById('my-icon').textContent = myOpt.icon;
+document.getElementById('my-val').textContent  = myOpt.label;
+
+// =============================================
+// Googleフォーム集計をGASから取得して表示
+// =============================================
+function renderDist(counts, total) {
+  document.getElementById('total-count').textContent = total;
+  const container = document.getElementById('dist-bars');
+  container.innerHTML = OPTS.map(o => {
+    // GASから返ってくるのは文字列ラベルをキーにした件数
+    const cnt = counts[o.label] || 0;
+    const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
+    return `<div class="dist-row">
+      <div class="dist-icon">${o.icon}</div>
+      <div class="dist-lbl">${o.label}</div>
+      <div class="bar-bg">
+        <div class="bar-fill" style="width:${pct}%;background:${BAR_COLORS[o.v]}"></div>
+      </div>
+      <div class="dist-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+// GASへのfetch（JSONPで呼ぶ：CORSを回避するため）
+function fetchGASData() {
+  const callbackName = 'gasCallback_' + Date.now();
+  const script = document.createElement('script');
+  script.src = GAS_URL + '?callback=' + callbackName;
+
+  window[callbackName] = function(data) {
+    document.getElementById('dist-bars').innerHTML = '';
+    if (data && data.counts) {
+      renderDist(data.counts, data.total);
+    } else {
+      document.getElementById('dist-bars').innerHTML =
+        '<div class="error-msg">回答データを取得できませんでした。</div>';
+    }
+    delete window[callbackName];
+    script.remove();
+  };
+
+  script.onerror = function() {
+    document.getElementById('dist-bars').innerHTML =
+      '<div class="error-msg">通信エラー。しばらくしてから再読み込みしてください。</div>';
+    delete window[callbackName];
+    script.remove();
+  };
+
+  document.head.appendChild(script);
+}
+
+fetchGASData();
+// 2分ごとに自動更新
+setInterval(fetchGASData, 2 * 60 * 1000);
+
+// =============================================
+// おんどとりデータ（data.json）を読み込んで表示
+// =============================================
+fetch('./data.json')
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById('m-temp').innerHTML =
+      d.temperature + '<span style="font-size:12px;color:#aaa">°C</span>';
+    document.getElementById('m-hum').innerHTML  =
+      d.humidity    + '<span style="font-size:12px;color:#aaa">%</span>';
+    document.getElementById('m-set').innerHTML  =
+      d.set_temperature + '<span style="font-size:12px;color:#aaa">°C</span>';
+
+    const tempOk = d.temperature     >= 24 && d.temperature     <= 27;
+    const humOk  = d.humidity        >= 45 && d.humidity        <= 60;
+    const setOk  = d.set_temperature >= 24 && d.set_temperature <= 28;
+    const b = (ok, okTxt, ngTxt) =>
+      `<span class="${ok ? 'badge-ok' : 'badge-warn'}">${ok ? okTxt : ngTxt}</span>`;
+    document.getElementById('b-temp').outerHTML = b(tempOk, '快適域内', '範囲外');
+    document.getElementById('b-hum').outerHTML  = b(humOk,  '快適域内', '範囲外');
+    document.getElementById('b-set').outerHTML  = b(setOk,  '快適域内', '範囲外');
+
+    const dt = new Date(d.updated_at);
+    document.getElementById('updated-at').innerHTML =
+      `${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')} 時点のデータ`;
+
+    // グラフ描画
+    new Chart(document.getElementById('chart'), {
+      type: 'line',
+      data: {
+        labels: d.history.map(h => h.time),
+        datasets: [
+          {
+            label:'室温', data: d.history.map(h => h.temp),
+            borderColor:'#D85A30', backgroundColor:'rgba(216,90,48,0.08)',
+            fill:true, tension:0.4, pointRadius:3, yAxisID:'y'
+          },
+          {
+            label:'湿度', data: d.history.map(h => h.hum),
+            borderColor:'#378ADD', backgroundColor:'rgba(55,138,221,0.08)',
+            fill:true, tension:0.4, pointRadius:3, borderDash:[5,3], yAxisID:'y2'
+          }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false } },
+        scales:{
+          y:  { min:16, max:32,
+                title:{display:true, text:'温度(°C)', font:{size:11}},
+                grid:{color:'rgba(0,0,0,0.05)'}, ticks:{font:{size:11}} },
+          y2: { position:'right', min:35, max:75,
+                title:{display:true, text:'湿度(%)', font:{size:11}},
+                grid:{display:false}, ticks:{font:{size:11}} },
+          x:  { ticks:{font:{size:11}, autoSkip:false, maxRotation:0} }
+        }
+      }
+    });
+  })
+  .catch(() => {
+    document.getElementById('updated-at').textContent = 'センサーデータ読み込みエラー';
+  });
+
+// =============================================
+// QRコード描画
+// =============================================
+function drawQR(canvas) {
+  const size = 140, ctx = canvas.getContext('2d');
+  const url  = location.origin + location.pathname.replace('result.html', 'index.html');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, size, size);
+  const cells = 21, cell = Math.floor(size / cells),
+        pad   = Math.floor((size - cell * cells) / 2);
+  const hash = Array.from(url).reduce((a, c) => a + c.charCodeAt(0), 0);
+  const rng  = s => { let x = Math.sin(s * 9301 + 49297) * 233280; return x - Math.floor(x); };
+  for (let r = 0; r < cells; r++) {
+    for (let c = 0; c < cells; c++) {
+      const isTL = r<8&&c<8, isTR = r<8&&c>=cells-8, isBL = r>=cells-8&&c<8;
+      let dark = false;
+      if (isTL || isTR || isBL) {
+        const fr = isTL ? r : (isBL ? r-(cells-8) : r);
+        const fc = isTL ? c : (isTR ? c-(cells-8) : c);
+        dark = (fr===0||fr===6||fc===0||fc===6) || (fr>=2&&fr<=4&&fc>=2&&fc<=4);
+      } else {
+        dark = rng(r * cells + c + hash) > 0.5;
+      }
+      ctx.fillStyle = dark ? '#1a1a1a' : '#fff';
+      ctx.fillRect(pad + c * cell, pad + r * cell, cell, cell);
+    }
+  }
+  const df = (x, y) => {
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(x, y, 7*cell, 7*cell);
+    ctx.fillStyle = '#fff';    ctx.fillRect(x+cell, y+cell, 5*cell, 5*cell);
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(x+2*cell, y+2*cell, 3*cell, 3*cell);
+  };
+  df(pad, pad);
+  df(pad + (cells-7)*cell, pad);
+  df(pad, pad + (cells-7)*cell);
+}
+drawQR(document.getElementById('qr'));
+</script>
+</body>
+</html>
