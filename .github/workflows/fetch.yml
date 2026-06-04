@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: fetch
         run: |
-          curl -s -X POST "https://api.webstorage.jp/v1/devices/current" -H "Content-Type: application/json" -H "X-HTTP-Method-Override: GET" -d "{\"api-key\":\"${{ secrets.ONDOTORI_API_KEY }}\",\"login-id\":\"${{ secrets.ONDOTORI_LOGIN_ID }}\",\"login-pass\":\"${{ secrets.ONDOTORI_LOGIN_PASS }}\"}" > raw.json
+         curl -s -X POST "https://api.webstorage.jp/v1/devices/current" -H "Content-Type: application/json" -H "X-HTTP-Method-Override: GET" -d '{"api-key":"${{ secrets.ONDOTORI_API_KEY }}","login-id":"${{ secrets.ONDOTORI_LOGIN_ID }}","login-pass":"${{ secrets.ONDOTORI_LOGIN_PASS }}"}' > raw.json
           cat raw.json
           python3 -c "
 import json,datetime
