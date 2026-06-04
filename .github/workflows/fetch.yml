@@ -9,8 +9,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: fetch
+        env:
+          API_KEY: ${{ secrets.ONDOTORI_API_KEY }}
+          LOGIN_ID: ${{ secrets.ONDOTORI_LOGIN_ID }}
+          LOGIN_PASS: ${{ secrets.ONDOTORI_LOGIN_PASS }}
         run: |
-          curl -s "https://api.webstorage.jp/v1/devices/current?api-key=${{ secrets.ONDOTORI_API_KEY }}&login-id=${{ secrets.ONDOTORI_LOGIN_ID }}&login-pass=${{ secrets.ONDOTORI_LOGIN_PASS }}" > raw.json
+          curl -s -X POST "https://api.webstorage.jp/v1/devices/current" \
+            -H "Content-Type: application/json" \
+            -H "X-HTTP-Method-Override: GET" \
+            -d "{\"api-key\":\"${API_KEY}\",\"login-id\":\"${LOGIN_ID}\",\"login-pass\":\"${LOGIN_PASS}\"}" \
+            > raw.json
           cat raw.json
           python3 fetch_data.py
       - name: push
