@@ -14,10 +14,11 @@ jobs:
           LOGIN_ID: ${{ secrets.ONDOTORI_LOGIN_ID }}
           LOGIN_PASS: ${{ secrets.ONDOTORI_LOGIN_PASS }}
         run: |
+          printf '{"api-key":"%s","login-id":"%s","login-pass":"%s"}' "$API_KEY" "$LOGIN_ID" "$LOGIN_PASS" > body.json
           curl -s -X POST "https://api.webstorage.jp/v1/devices/current" \
             -H "Content-Type: application/json" \
             -H "X-HTTP-Method-Override: GET" \
-            -d "{\"api-key\":\"${API_KEY}\",\"login-id\":\"${LOGIN_ID}\",\"login-pass\":\"${LOGIN_PASS}\"}" \
+            -d @body.json \
             > raw.json
           cat raw.json
           python3 fetch_data.py
