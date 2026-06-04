@@ -37,30 +37,3 @@ try:
     with open('data.json') as f:
         existing = json.load(f)
     history = existing.get('history', [])
-except:
-    history = []
-
-now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
-history.append({'time': now.strftime('%H:%M'), 'temp': temp, 'hum': hum})
-history = history[-24:]
-
-out = {
-    'temperature':     temp,
-    'humidity':        hum,
-    'set_temperature': 28,
-    'updated_at':      now.isoformat(),
-    'history':         history
-}
-
-with open('data.json', 'w') as f:
-    json.dump(out, f, ensure_ascii=False, indent=2)
-print('Done:', temp, hum)
-"
-
-      - name: data.jsonをコミット＆プッシュ
-        run: |
-          git config user.email "bot@github.com"
-          git config user.name  "GitHub Actions"
-          git add data.json
-          git diff --cached --quiet || git commit -m "Update sensor data"
-          git push
