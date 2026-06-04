@@ -1,31 +1,40 @@
 name: Fetch Ondotori Data
-
 on:
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch:
-
 jobs:
   fetch:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: おんどとりAPIからデータ取得
-        env:
-          ONDOTORI_API_KEY: ${{ secrets.ONDOTORI_API_KEY }}
-          ONDOTORI_LOGIN_ID: ${{ secrets.ONDOTORI_LOGIN_ID }}
-          ONDOTORI_LOGIN_PASS: ${{ secrets.ONDOTORI_LOGIN_PASS }}
+      - name: fetch
         run: |
-          curl -s -X POST "https://api.webstorage.jp/v1/devices/current" \
-            -H "Content-Type: application/json" \
-            -H "X-HTTP-Method-Override: GET" \
-            -d "{\"api-key\":\"${ONDOTORI_API_KEY}\",\"login-id\":\"${ONDOTORI_LOGIN_ID}\",\"login-pass\":\"${ONDOTORI_LOGIN_PASS}\"}" \
-            > raw.json
+          curl -s -X POST "https://api.webstorage.jp/v1/devices/current" -H "Content-Type: application/json" -H "X-HTTP-Method-Override: GET" -d "{\"api-key\":\"${{ secrets.ONDOTORI_API_KEY }}\",\"login-id\":\"${{ secrets.ONDOTORI_LOGIN_ID }}\",\"login-pass\":\"${{ secrets.ONDOTORI_LOGIN_PASS }}\"}" > raw.json
           cat raw.json
-          python3 fetch_data.py
-
-      - name: data.jsonをコミット＆プッシュ
+          python3 -c "
+import json,datetime
+raw=json.load(open('raw.json'))
+for i,d in enumerate(raw['devices']):
+  print(i,d.get('name'),d.get('serial'))
+  for j,c in enumerate(d['channel']):
+    print(' ch'+str(j),c.get('name'),c.get('value'),c.get('unit'))
+dev=raw['devices'][0]
+temp=float(dev['channel'][0]['value'])
+hum=float(dev['channel'][1]['value'])
+try:
+  existing=json.load(open('data.json'))
+  history=existing.get('history',[])
+except:
+  history=[]
+now=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+history.append({'time':now.strftime('%H:%M'),'temp':temp,'hum':hum})
+history=history[-24:]
+out={'temperature':temp,'humidity':hum,'set_temperature':28,'updated_at':now.isoformat(),'history':history}
+json.dump(out,open('data.json','w'),ensure_ascii=False,indent=2)
+print('Done',temp,hum)
+"
+      - name: push
         run: |
           git config user.email "bot@github.com"
           git config user.name "GitHub Actions"
