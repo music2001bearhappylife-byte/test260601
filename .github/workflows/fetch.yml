@@ -2,8 +2,8 @@ name: Fetch Ondotori Data
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
-  workflow_dispatch:
+    - cron: '*/15 * * * *'   # 15分ごとに自動実行
+  workflow_dispatch:           # GitHubの画面から手動実行もできる
 
 jobs:
   fetch:
@@ -21,7 +21,7 @@ jobs:
               \"login-id\":   \"${{ secrets.ONDOTORI_LOGIN_ID }}\",
               \"login-pass\": \"${{ secrets.ONDOTORI_LOGIN_PASS }}\"
             }" > raw.json
-          cat raw.json
+
           python3 -c "
 import json, sys, datetime
 
@@ -30,8 +30,8 @@ with open('raw.json') as f:
 
 dev      = raw['devices'][0]
 channels = dev['channel']
-temp     = float(channels[0]['value'])
-hum      = float(channels[1]['value'])
+temp     = float(channels[0]['value'])  # ch1 = 温度
+hum      = float(channels[1]['value'])  # ch2 = 湿度
 
 try:
     with open('data.json') as f:
@@ -42,7 +42,7 @@ except:
 
 now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
 history.append({'time': now.strftime('%H:%M'), 'temp': temp, 'hum': hum})
-history = history[-24:]
+history = history[-24:]  # 直近24件（6時間分）だけ保持
 
 out = {
     'temperature':     temp,
