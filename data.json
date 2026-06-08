@@ -1,0 +1,13 @@
+{
+  "temperature": 9.1,
+  "humidity": 38.0,
+  "set_temperature": 28,
+  "updated_at": "2026-06-08T15:16:09.193435+09:00",
+  "history": [
+    {
+      "time": "15:16",
+      "temp": 9.1,
+      "hum": 38.0
+    }
+  ]
+}
