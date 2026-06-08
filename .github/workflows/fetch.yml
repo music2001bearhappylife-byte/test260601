@@ -14,12 +14,11 @@ jobs:
           LOGIN_ID: ${{ secrets.ONDOTORI_LOGIN_ID }}
           LOGIN_PASS: ${{ secrets.ONDOTORI_LOGIN_PASS }}
         run: |
-          curl -s -X POST \
-            -H "Content-Type: application/json" \
-            -H "X-HTTP-Method-Override: GET" \
-            -d "{\"api-key\":\"${API_KEY}\",\"login-id\":\"${LOGIN_ID}\",\"login-pass\":\"${LOGIN_PASS}\"}" \
-            https://api.webstorage.jp:443/v1/devices/current \
-            > raw.json
-          echo "=== APIの返答 ==="
-          cat raw.json
-          echo "=== ここまで ==="
+          python3 fetch_data.py
+      - name: push
+        run: |
+          git config user.email "bot@github.com"
+          git config user.name "GitHub Actions"
+          git add data.json
+          git diff --cached --quiet || git commit -m "Update sensor data"
+          git push
