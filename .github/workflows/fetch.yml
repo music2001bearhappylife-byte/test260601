@@ -20,12 +20,6 @@ jobs:
             -d "{\"api-key\":\"${API_KEY}\",\"login-id\":\"${LOGIN_ID}\",\"login-pass\":\"${LOGIN_PASS}\"}" \
             https://api.webstorage.jp:443/v1/devices/current \
             > raw.json
+          echo "=== APIの返答 ==="
           cat raw.json
-          python3 fetch_data.py
-      - name: push
-        run: |
-          git config user.email "bot@github.com"
-          git config user.name "GitHub Actions"
-          git add data.json
-          git diff --cached --quiet || git commit -m "Update sensor data"
-          git push
+          echo "=== ここまで ==="
