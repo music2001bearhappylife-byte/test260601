@@ -32,18 +32,24 @@ except urllib.error.HTTPError as e:
     print('エラー詳細:', e.read().decode('utf-8'))
     exit(1)
 
-print('=== APIの返答 ===')
-print(json.dumps(raw, ensure_ascii=False, indent=2))
-print('=== ここまで ===')
+# ★★★ 使いたい機器のシリアル番号をここだけ変える ★★★
+TARGET_SERIAL = 'E28400B3'
+# ★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
-for i, d in enumerate(raw['devices']):
-    print(i, d.get('name'), d.get('serial'))
-    for j, c in enumerate(d['channel']):
-        print(' ch' + str(j), c.get('name'), c.get('value'), c.get('unit'))
+target = None
+for d in raw['devices']:
+    if d.get('serial') == TARGET_SERIAL:
+        target = d
+        break
 
-dev  = raw['devices'][0]
-temp = float(dev['channel'][0]['value'])
-hum  = float(dev['channel'][1]['value'])
+if target is None:
+    print('エラー: シリアル番号', TARGET_SERIAL, 'の機器が見つかりません')
+    exit(1)
+
+print('使用機器:', target.get('name'), target.get('serial'))
+
+temp = float(target['channel'][0]['value'])
+hum  = float(target['channel'][1]['value'])
 
 try:
     existing = json.load(open('data.json'))
