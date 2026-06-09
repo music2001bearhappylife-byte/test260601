@@ -149,7 +149,7 @@ function renderDist(counts, total) {
   const container = document.getElementById('dist-bars');
   container.innerHTML = OPTS.map(o => {
     // GASから返ってくるのは文字列ラベルをキーにした件数
-    const cnt = counts[o.formlabel] || 0;
+    const cnt = counts[o.formLabel] || 0;
     const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
     return `<div class="dist-row">
       <div class="dist-icon">${o.icon}</div>
