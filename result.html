@@ -133,11 +133,11 @@ const LABEL_TO_V = {
 };
 
 const OPTS = [
-  { v:5, icon:'🥵', label:'とても暑い' },
-  { v:4, icon:'😓', label:'やや暑い'   },
-  { v:3, icon:'😊', label:'ちょうどよい'},
-  { v:2, icon:'🥶', label:'やや寒い'   },
-  { v:1, icon:'🧊', label:'とても寒い' },
+  { v:5, icon:'🥵', label:'とても暑い', formLabel:'とても暑い（汗ばむほど暑い）' },
+  { v:4, icon:'😓', label:'やや暑い',   formLabel:'やや暑い（少し暑さを感じる）' },
+  { v:3, icon:'😊', label:'ちょうどよい', formLabel:'ちょうどよい（快適な温度）' },
+  { v:2, icon:'🥶', label:'やや寒い',   formLabel:'やや寒い（少し肌寒い）' },
+  { v:1, icon:'🧊', label:'とても寒い', formLabel:'とても寒い（震えるほど寒い）' },
 ];
 const BAR_COLORS = { 5:'#D85A30', 4:'#EF9F27', 3:'#639922', 2:'#378ADD', 1:'#534AB7' };
 
@@ -149,7 +149,7 @@ function renderDist(counts, total) {
   const container = document.getElementById('dist-bars');
   container.innerHTML = OPTS.map(o => {
     // GASから返ってくるのは文字列ラベルをキーにした件数
-    const cnt = counts[o.label] || 0;
+    const cnt = counts[o.formlabel] || 0;
     const pct = total > 0 ? Math.round(cnt / total * 100) : 0;
     return `<div class="dist-row">
       <div class="dist-icon">${o.icon}</div>
